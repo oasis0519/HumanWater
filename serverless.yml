@@ -1,0 +1,58 @@
+service: severless
+custom:
+  tableName: HumanWaterTable
+provider:
+  name: aws
+  runtime: nodejs14.x
+  stage: ${opt:stage, 'pro'}
+  region: us-east-1
+  environment:
+    DYNAMODB_TABLE: ${self:custom.tableName}
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource:
+        - { "Fn::GetAtt": ["HumanWaterTable", "Arn"] }
+
+functions:
+  createUserData:
+    handler: handler.createUserData
+    events:
+      - http:
+          path: /vv/{id}
+          method: post
+          cors: true
+  getUserData:
+    handler: handler.getUserData
+    events:
+      - http:
+          path: /vv/{id}
+          method: get
+          cors: true
+  updateUserData:
+    handler: handler.updateUserData
+    events:
+      - http:
+          path: /vv/{id}
+          method: put
+          cors: true
+
+resources:
+  Resources:
+    HumanWaterTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.tableName}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
